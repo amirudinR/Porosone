@@ -8,6 +8,7 @@ class ActionGateway:
     ACTION_LEVELS = {
         "search_text": 1,
         "calculate": 1,
+        "read_file": 1,
         "create_file": 2,
         "create_folder": 2,
         "delete_file": 3,

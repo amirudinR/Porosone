@@ -12,3 +12,5 @@ python-dotenv>=1.0.0
 
 # Security
 cryptography>=41.0.0
+playwright>=1.39.0
+requests>=2.31.0

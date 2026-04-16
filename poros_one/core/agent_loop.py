@@ -1,6 +1,9 @@
 import json
 from poros_one.memory.soul_manager import SoulManager
 from poros_one.security.hitl_gateway import ActionGateway
+from poros_one.tools.os_manager import OSManager
+from poros_one.tools.web_browser import WebBrowser
+from poros_one.tools.communicator import Communicator
 import litellm
 
 class PorosAgent:
@@ -33,13 +36,15 @@ Ingatan relevan Anda:
 
 Tugas Pengguna: {user_prompt}
 
-Pilih SATU tindakan yang paling sesuai dari daftar berikut:
-- search_text
-- create_file
-- delete_file
+Pilih SATU tindakan yang paling sesuai dari daftar alat berikut:
+1. read_file (details: filepath)
+2. create_file (details: format json {{"filepath": "...", "content": "..."}})
+3. delete_file (details: filepath)
+4. search_text (details: query pencarian)
+5. send_message (details: pesan teks)
 
 Berikan output murni dalam format JSON:
-{{"action": "nama_tindakan", "details": "detail_tindakan"}}
+{{"action": "nama_tindakan", "details": "detail_tindakan_sesuai_format"}}
 """
 
         # Simulasi LLM call
@@ -71,7 +76,7 @@ Berikan output murni dalam format JSON:
 
     def _act_and_observe(self, decision: dict) -> str:
         """
-        ACTION & OBSERVATION: Memeriksa otorisasi lalu melakukan tindakan fisik (simulasi).
+        ACTION & OBSERVATION: Memeriksa otorisasi lalu memanggil tools yang sesuai.
         """
         action_name = decision.get("action", "")
         details = decision.get("details", "")
@@ -79,16 +84,40 @@ Berikan output murni dalam format JSON:
         print(f"\\n--- [ACTION] Mencoba mengeksekusi ---")
 
         try:
-            # Lewati HitL Gateway
-            self.gateway.check_action(action_name, details)
+            # Otorisasi Gateway ditangani di dalam masing-masing method tools
+            # Namun kita juga bisa memanggil pre-check jika diperlukan
 
-            # Simulasi Eksekusi
-            observation = f"Berhasil mengeksekusi {action_name}. Detail: {details}"
+            observation = ""
+
+            # Eksekusi Tool Sebenarnya
+            if action_name == "read_file":
+                observation = OSManager.read_file(details)
+            elif action_name == "create_file":
+                try:
+                    # Mem-parsing details JSON
+                    parsed = json.loads(details) if isinstance(details, str) else details
+                    observation = OSManager.write_file(parsed.get("filepath", ""), parsed.get("content", ""))
+                except Exception:
+                    # Fallback apabila LLM tidak memberikan format JSON yang sempurna
+                    observation = OSManager.write_file("output.txt", str(details))
+            elif action_name == "delete_file":
+                observation = OSManager.delete_file(details)
+            elif action_name == "search_text":
+                observation = WebBrowser.search_and_summarize(details)
+            elif action_name == "send_message":
+                observation = Communicator.send_telegram_message(details)
+            else:
+                observation = f"Tindakan tidak dikenal: {action_name}"
+
             print(f"[OBSERVATION] {observation}")
             return observation
 
         except PermissionError as e:
             observation = f"Gagal mengeksekusi {action_name}. Alasan: {e}"
+            print(f"[OBSERVATION] {observation}")
+            return observation
+        except Exception as e:
+            observation = f"Error tidak terduga saat mengeksekusi {action_name}: {e}"
             print(f"[OBSERVATION] {observation}")
             return observation
 

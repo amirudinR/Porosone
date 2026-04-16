@@ -1,0 +1,25 @@
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Environments
+.env
+.venv
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Local databases and caches
+poros_memory/
+test_memory/
+.chroma/
+*.sqlite3
+*.bin
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/

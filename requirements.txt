@@ -9,3 +9,6 @@ litellm>=1.0.0
 # General Utilities
 pydantic>=2.0.0
 python-dotenv>=1.0.0
+
+# Security
+cryptography>=41.0.0

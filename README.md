@@ -43,19 +43,20 @@ Mereka bertukar ingatan melalui *FastAPI Local Sync Server* menggunakan file `.p
 ## 🚀 Cara Instalasi (Installation)
 
 ### Prasyarat (Prerequisites)
-Pastikan Anda menggunakan **Python 3.10** atau lebih baru. Disarankan menggunakan virtual environment (venv/conda).
+- **Node.js** (v14+ untuk NPM CLI wrapper)
+- **Python 3.10+** (Pastikan Python sudah ditambahkan ke `PATH` OS/Windows Anda)
 
-### Menggunakan `pip` (Local Clone)
+### Menggunakan `npm` (Local Install)
 1. *Clone* repositori ini:
    ```bash
    git clone https://github.com/yourusername/poros-one.git
    cd poros-one
    ```
-2. Instal project beserta dependencies-nya menggunakan `pip`:
+2. Instal secara global menggunakan `npm` (Ini akan mengotomatisasi instalasi *dependencies* Python via `pip`):
    ```bash
-   pip install -e .
+   npm install -g .
    ```
-3. Install Playwright browser binaries (untuk tools Web Browser):
+3. Install Playwright browser binaries (opsional, jika tools Web Browser dibutuhkan):
    ```bash
    playwright install chromium
    ```

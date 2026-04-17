@@ -1,0 +1,16 @@
+{
+  "name": "poros-one",
+  "version": "1.0.0",
+  "description": "Poros One: Autonomous Continuous Learning AI Agent Node PC Wrapper",
+  "author": "AI Architect & Lead Programmer",
+  "license": "MIT",
+  "bin": {
+    "poros": "./bin/poros.js"
+  },
+  "scripts": {
+    "postinstall": "pip install -r requirements.txt"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}

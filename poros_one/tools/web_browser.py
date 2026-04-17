@@ -38,3 +38,53 @@ class WebBrowser:
 
         except Exception as e:
             return f"Gagal melakukan pencarian web: {e}"
+
+    @staticmethod
+    def interact_with_webpage(url: str, action_type: str, selector: str, input_text: str = None) -> str:
+        """
+        Berinteraksi dengan elemen web secara aktif (click/fill) lalu mengekstrak isi halaman/hasil. (Level 2)
+
+        Args:
+            url: URL tujuan.
+            action_type: 'click' atau 'fill'.
+            selector: CSS atau XPath selector elemen.
+            input_text: Teks untuk diketikkan (jika action_type='fill').
+        """
+        try:
+            ActionGateway.check_action("interact_web", f"Aksi '{action_type}' pada {url} selector '{selector}'")
+
+            with sync_playwright() as p:
+                browser = p.chromium.launch(headless=True)
+                page = browser.new_page()
+                page.goto(url)
+
+                # Tunggu elemen muncul maksimal 5 detik
+                page.wait_for_selector(selector, timeout=5000)
+
+                if action_type == "click":
+                    page.locator(selector).click()
+                elif action_type == "fill":
+                    if not input_text:
+                        raise ValueError("input_text dibutuhkan untuk aksi 'fill'.")
+                    page.locator(selector).fill(input_text)
+                else:
+                    raise ValueError(f"action_type tidak valid: {action_type}")
+
+                # Tunggu network idle setelah interaksi
+                page.wait_for_load_state("networkidle", timeout=5000)
+
+                # Ekstrak seluruh konten HTML agar agen bisa melihat selector yang tersedia
+                # (Akan di-parse atau digunakan oleh LLM untuk mencari selector)
+                result_html = page.content()
+                # Batasi output dengan membuang skrip dan stylesheet, fokus ke body.
+                import re
+                clean_html = re.sub(r"<(script|style).*?>.*?</\1>", "", result_html, flags=re.DOTALL)
+                clean_html = re.sub(r"\\s+", " ", clean_html).strip()
+                # Berikan cuplikan HTML yang cukup untuk elemen interaktif selanjutnya
+                result_snippet = clean_html[:1500] + "... (terpotong)" if len(clean_html) > 1500 else clean_html
+
+                browser.close()
+                return f"Interaksi berhasil. Cuplikan DOM halaman saat ini:\\n{result_snippet}"
+
+        except Exception as e:
+            return f"Error saat interaksi web: {e}"

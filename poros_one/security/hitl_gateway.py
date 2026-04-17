@@ -11,9 +11,12 @@ class ActionGateway:
         "read_file": 1,
         "create_file": 2,
         "create_folder": 2,
+        "interact_web": 2,
+        "run_code": 2,
         "delete_file": 3,
         "send_message": 3,
-        "modify_os_config": 3
+        "modify_os_config": 3,
+        "ask_user_help": 3
     }
 
     @classmethod

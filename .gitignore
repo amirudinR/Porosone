@@ -22,4 +22,4 @@ test_memory/
 # Testing
 .pytest_cache/
 .coverage
-htmlcov/
+htmlcov/*.egg-info/

@@ -23,7 +23,7 @@ class PorosAgent:
         THOUGHT: Mengambil konteks dari memori dan meminta LLM menentukan tindakan.
         Mengembalikan dictionary berupa action dan details.
         """
-        print("\\n--- [THOUGHT] Sedang berpikir ---")
+        ActionGateway.log("\\n--- [THOUGHT] Sedang berpikir ---")
 
         # Simulasi LLM call
         try:
@@ -41,11 +41,11 @@ class PorosAgent:
                 llm_output = llm_output[3:-3].strip()
 
             decision = json.loads(llm_output)
-            print(f"Keputusan: {decision}")
+            ActionGateway.log(f"Keputusan: {decision}")
             return decision
 
         except Exception as e:
-            print(f"Gagal berpikir: {e}")
+            ActionGateway.log(f"Gagal berpikir: {e}")
             # Fallback jika API gagal (misal untuk testing lokal tanpa key)
             return {"action": "ask_user_help", "details": f"Error internal LLM: {e}"}
 
@@ -94,7 +94,7 @@ Berikan output murni dalam format JSON:
         action_name = decision.get("action", "")
         details = decision.get("details", "")
 
-        print(f"\\n--- [ACTION] Mencoba mengeksekusi ---")
+        ActionGateway.log(f"\\n--- [ACTION] Mencoba mengeksekusi ---")
 
         try:
             # Otorisasi Gateway ditangani di dalam masing-masing method tools
@@ -130,22 +130,22 @@ Berikan output murni dalam format JSON:
             elif action_name == "run_code":
                 observation = CodeSandbox.run_python_safely(details)
             elif action_name == "ask_user_help":
-                print(f"[ESCALATION] Agen meminta bantuan Anda: {details}")
+                ActionGateway.log(f"[ESCALATION] Agen meminta bantuan Anda: {details}")
                 ActionGateway.check_action("ask_user_help", details)
                 observation = "Tindakan dihentikan secara aman karena eskalasi pengguna."
             else:
                 observation = f"Error: Tindakan tidak dikenal '{action_name}'"
 
-            print(f"[OBSERVATION] {observation}")
+            ActionGateway.log(f"[OBSERVATION] {observation}")
             return observation
 
         except PermissionError as e:
             observation = f"Error Eksekusi Ditolak: {action_name} - {e}"
-            print(f"[OBSERVATION] {observation}")
+            ActionGateway.log(f"[OBSERVATION] {observation}")
             return observation
         except Exception as e:
             observation = f"Error tidak terduga saat mengeksekusi {action_name}: {e}"
-            print(f"[OBSERVATION] {observation}")
+            ActionGateway.log(f"[OBSERVATION] {observation}")
             return observation
 
     def run_task(self, user_prompt: str):
@@ -153,7 +153,7 @@ Berikan output murni dalam format JSON:
         Menjalankan loop ReAct dengan Self-Reflection dan Auto-Correction.
         Maksimal 3 kali percobaan (retry) jika terjadi Error.
         """
-        print(f"\\n=== MEMULAI TUGAS: {user_prompt} ===")
+        ActionGateway.log(f"\\n=== MEMULAI TUGAS: {user_prompt} ===")
 
         max_retries = 3
         attempt = 0
@@ -164,7 +164,7 @@ Berikan output murni dalam format JSON:
         while attempt < max_retries:
             attempt += 1
             if attempt > 1:
-                print(f"\\n>>> [RETRY LOOP {attempt}/{max_retries}] Melakukan evaluasi ulang karena error sebelumnya...")
+                ActionGateway.log(f"\\n>>> [RETRY LOOP {attempt}/{max_retries}] Melakukan evaluasi ulang karena error sebelumnya...")
 
             # 1. Thought & Build Prompt
             prompt = self._build_prompt(user_prompt, last_error)
@@ -190,16 +190,16 @@ Berikan output murni dalam format JSON:
                 break
 
         if attempt == max_retries and last_error:
-            print("\\n[FATAL] Agen gagal menyelesaikan tugas setelah batas maksimal retry. Menyerah.")
+            ActionGateway.log("\\n[FATAL] Agen gagal menyelesaikan tugas setelah batas maksimal retry. Menyerah.")
             # Otomatis eskalasi
             try:
                 self.gateway.check_action("ask_user_help", f"Sistem menyerah karena: {last_error}")
             except PermissionError as e:
-                print(f"[OBSERVATION] {e}")
+                ActionGateway.log(f"[OBSERVATION] {e}")
 
         # Simpan pengalaman ke memori mentah (Raw Memory)
-        print("\\n--- [MEMORY] Menyimpan Pengalaman ---")
+        ActionGateway.log("\\n--- [MEMORY] Menyimpan Pengalaman ---")
         log_entry = f"User Request: {user_prompt} | Last Action: {last_action} | Result: {final_observation}"
         self.soul_manager.add_raw_memory(log_entry)
 
-        print("=== TUGAS SELESAI ===")
+        ActionGateway.log("=== TUGAS SELESAI ===")

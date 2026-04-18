@@ -75,7 +75,13 @@ Mereka bertukar ingatan melalui *FastAPI Local Sync Server* menggunakan file `.p
 Setelah instalasi berhasil, command global `poros` akan tersedia di terminal Anda.
 
 ### Menjalankan Node PC (Sang Eksekutor)
-Cukup ketik perintah berikut di terminal Anda untuk masuk ke *Interactive ReAct Loop*:
+
+Untuk menggunakan antarmuka Web Dashboard (dengan Chat UI dan HitL Popup):
+```bash
+poros run --web
+```
+
+Untuk masuk ke *Interactive CLI Loop* langsung di terminal:
 ```bash
 poros
 ```

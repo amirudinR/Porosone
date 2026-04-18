@@ -27,8 +27,14 @@ class WebDashboardServer:
 
         # Event lock sinkron untuk menjembatani FastAPI (Async) dan Agent Loop (Sync)
         # Khusus untuk sistem persetujuan Human-in-the-Loop
-        self.hitl_event = asyncio.Event()
+        self.hitl_event = None
         self.hitl_response_status = None
+        self.main_loop = None
+
+        # Mount static directory for JS and CSS
+        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        web_dir = os.path.join(base_dir, "web")
+        self.app.mount("/static", StaticFiles(directory=web_dir), name="static")
 
         self._setup_routes()
 
@@ -37,7 +43,6 @@ class WebDashboardServer:
         @self.app.get("/", response_class=HTMLResponse)
         async def get_index():
             """Melayani UI utama dari index.html"""
-            # Asumsikan root project adalah dua tingkat di atas poros_one/network
             base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
             index_path = os.path.join(base_dir, "web", "index.html")
 
@@ -52,6 +57,11 @@ class WebDashboardServer:
             """Menerima dan memproses pesan dari UI Chat"""
             await websocket.accept()
             self.active_websocket = websocket
+
+            # Ambil event loop aktif agar thread sinkron bisa mengirim request kembali ke Async context
+            self.main_loop = asyncio.get_running_loop()
+            if self.hitl_event is None:
+                self.hitl_event = asyncio.Event()
 
             print("\\n[WEB] Klien terhubung ke Dashboard.")
 
@@ -75,7 +85,8 @@ class WebDashboardServer:
                         # User merespon popup otorisasi (Y/N)
                         self.hitl_response_status = payload.get("status") # "approved" atau "rejected"
                         # Lepaskan lock yang menunggu di Agent Loop
-                        self.hitl_event.set()
+                        if self.hitl_event:
+                            self.hitl_event.set()
 
             except WebSocketDisconnect:
                 print("\\n[WEB] Klien terputus dari Dashboard.")
@@ -103,12 +114,8 @@ class WebDashboardServer:
 
     def _send_ws_sync(self, payload: dict):
         """Membantu mengirim WS dari thread sinkron (Agent Loop) ke event loop Async"""
-        try:
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                asyncio.run_coroutine_threadsafe(self._send_ws(payload), loop)
-        except RuntimeError:
-            pass # Event loop tidak ada
+        if self.main_loop and self.main_loop.is_running():
+            asyncio.run_coroutine_threadsafe(self._send_ws(payload), self.main_loop)
 
     def trigger_hitl_approval_sync(self, action_name: str, action_details: str) -> bool:
         """
@@ -116,25 +123,27 @@ class WebDashboardServer:
         Menghentikan eksekusi agen, memunculkan popup di UI, lalu menunggu balasan.
         Berjalan secara sinkron memblokir thread Agen.
         """
-        # 1. Reset event lock
-        try:
-            loop = asyncio.get_event_loop()
-        except RuntimeError:
-            # Fallback jika loop tertutup, otomatis tolak demi keamanan
+        if not self.main_loop or not self.hitl_event:
             return False
 
-        self.hitl_event.clear()
+        # 1. Reset event lock dengan me-lempar task ke event loop utama untuk menghindari RuntimeError "Event loop is closed"
+        def clear_event():
+            self.hitl_event.clear()
+
+        # Panggil clear_event di dalam event loop utama
+        self.main_loop.call_soon_threadsafe(clear_event)
         self.hitl_response_status = None
 
         # 2. Kirim pesan HitL ke UI
         msg = f"Menunggu otorisasi untuk: {action_name}\\nDetail: {action_details}"
         self._send_ws_sync({"type": "hitl_request", "message": msg})
 
-        # 3. Tunggu hingga user mengklik Y/N di UI (menggunakan run_until_complete di thread terpisah)
-        # Karena kita berada di worker thread, kita minta event loop utama untuk menunggu
-        future = asyncio.run_coroutine_threadsafe(self.hitl_event.wait(), loop)
+        # 3. Tunggu hingga user mengklik Y/N di UI
+        # Karena kita berada di worker thread, kita minta event loop utama untuk memantau asyncio.Event
+        # dan memblokir worker thread secara aman lewat future.result()
+        future = asyncio.run_coroutine_threadsafe(self.hitl_event.wait(), self.main_loop)
         try:
-            future.result() # Memblokir thread agen sampai UI merespon
+            future.result() # Memblokir thread agen (sinkron) sampai future terpenuhi (UI merespon)
         except Exception:
             return False
 

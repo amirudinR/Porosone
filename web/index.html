@@ -4,18 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Poros One - Local Dashboard</title>
-    <!-- Gunakan TailwindCSS CDN untuk styling cepat -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        /* Sembunyikan scrollbar untuk tampilan lebih rapi */
-        .no-scrollbar::-webkit-scrollbar {
-            display: none;
-        }
-        .no-scrollbar {
-            -ms-overflow-style: none;  /* IE and Edge */
-            scrollbar-width: none;  /* Firefox */
-        }
-    </style>
+    <link rel="stylesheet" href="/static/style.css">
 </head>
 <body class="bg-gray-100 h-screen flex flex-col font-sans">
 
@@ -29,7 +19,6 @@
 
     <!-- Main Chat Area -->
     <main class="flex-1 overflow-y-auto p-4 md:p-8 space-y-4 no-scrollbar" id="chat-container">
-        <!-- Chat messages will be injected here -->
         <div class="flex justify-start">
             <div class="bg-white text-gray-800 p-4 rounded-2xl rounded-tl-none shadow-sm max-w-2xl">
                 <p>Halo Mas Amir, saya Poros One. Sistem sudah online dan terkoneksi ke Local Dashboard. Apa yang bisa saya bantu hari ini?</p>
@@ -50,7 +39,7 @@
         </form>
     </footer>
 
-    <!-- HitL Approval Modal (Hidden by default) -->
+    <!-- HitL Approval Modal -->
     <div id="hitl-modal" style="display: none;" class="fixed inset-0 bg-black/60 backdrop-blur-sm justify-center items-center z-50 opacity-0 transition-opacity duration-300">
         <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full mx-4 overflow-hidden transform scale-95 transition-transform duration-300" id="hitl-modal-content">
             <div class="bg-red-500 p-4 text-white flex items-center gap-3">
@@ -61,11 +50,8 @@
             </div>
             <div class="p-6">
                 <p class="text-gray-600 mb-2 font-semibold">Agen meminta izin untuk melakukan tindakan Level 3:</p>
-                <div class="bg-gray-100 p-4 rounded-lg font-mono text-sm text-gray-800 break-words mb-6 border border-gray-200" id="hitl-message">
-                    <!-- HitL message will be injected here -->
-                </div>
+                <div class="bg-gray-100 p-4 rounded-lg font-mono text-sm text-gray-800 break-words mb-6 border border-gray-200" id="hitl-message"></div>
                 <p class="text-sm text-gray-500 italic mb-6">Tindakan ini mungkin bersifat destruktif atau menghubungi layanan eksternal. Apakah Anda mengizinkan?</p>
-
                 <div class="flex gap-4">
                     <button id="btn-reject" class="flex-1 bg-white border-2 border-red-500 text-red-500 hover:bg-red-50 font-bold py-3 px-4 rounded-xl transition">
                         Tolak (N)
@@ -78,165 +64,7 @@
         </div>
     </div>
 
-    <!-- JavaScript Logic (Vanilla JS + WebSocket) -->
-    <script>
-        const chatContainer = document.getElementById('chat-container');
-        const chatForm = document.getElementById('chat-form');
-        const chatInput = document.getElementById('chat-input');
-        const statusBadge = document.getElementById('connection-status');
-
-        const hitlModal = document.getElementById('hitl-modal');
-        const hitlModalContent = document.getElementById('hitl-modal-content');
-        const hitlMessage = document.getElementById('hitl-message');
-        const btnApprove = document.getElementById('btn-approve');
-        const btnReject = document.getElementById('btn-reject');
-
-        let ws;
-        let isAgentTyping = false;
-
-        function connectWebSocket() {
-            // Gunakan port host saat ini, arahkan ke endpoint /ws/chat
-            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const wsUrl = `${protocol}//${window.location.host}/ws/chat`;
-
-            ws = new WebSocket(wsUrl);
-
-            ws.onopen = () => {
-                statusBadge.textContent = 'Connected';
-                statusBadge.classList.replace('bg-red-500', 'bg-green-500');
-            };
-
-            ws.onmessage = (event) => {
-                const data = JSON.parse(event.data);
-
-                if (data.type === 'agent_message' || data.type === 'agent_log') {
-                    appendMessage(data.message, 'agent', data.type === 'agent_log');
-                    isAgentTyping = false;
-                }
-                else if (data.type === 'hitl_request') {
-                    showHitlModal(data.message);
-                }
-                else if (data.type === 'system') {
-                    // Pesan sistem, misal "Tugas Selesai"
-                    appendSystemMessage(data.message);
-                    isAgentTyping = false;
-                }
-            };
-
-            ws.onclose = () => {
-                statusBadge.textContent = 'Disconnected';
-                statusBadge.classList.replace('bg-green-500', 'bg-red-500');
-                // Reconnect setelah 3 detik
-                setTimeout(connectWebSocket, 3000);
-            };
-
-            ws.onerror = (err) => {
-                console.error("WebSocket Error:", err);
-            };
-        }
-
-        function appendMessage(text, sender, isLog = false) {
-            const wrapper = document.createElement('div');
-            wrapper.className = `flex ${sender === 'user' ? 'justify-end' : 'justify-start'}`;
-
-            const bubble = document.createElement('div');
-
-            if (sender === 'user') {
-                bubble.className = 'bg-indigo-600 text-white p-4 rounded-2xl rounded-tr-none shadow-md max-w-2xl';
-                bubble.textContent = text;
-            } else {
-                if (isLog) {
-                    // Tampilan log (Thought/Action)
-                    bubble.className = 'bg-gray-800 text-green-400 p-3 rounded-lg font-mono text-sm shadow-sm max-w-3xl border border-gray-700 overflow-x-auto';
-                    bubble.innerHTML = text.replace(/\\n/g, '<br>');
-                } else {
-                    // Tampilan pesan agen normal
-                    bubble.className = 'bg-white text-gray-800 p-4 rounded-2xl rounded-tl-none shadow-sm max-w-2xl border border-gray-100';
-                    bubble.innerHTML = text.replace(/\\n/g, '<br>');
-                }
-            }
-
-            wrapper.appendChild(bubble);
-            chatContainer.appendChild(wrapper);
-            scrollToBottom();
-        }
-
-        function appendSystemMessage(text) {
-            const wrapper = document.createElement('div');
-            wrapper.className = 'flex justify-center my-4';
-            const badge = document.createElement('div');
-            badge.className = 'bg-gray-200 text-gray-600 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider';
-            badge.textContent = text;
-            wrapper.appendChild(badge);
-            chatContainer.appendChild(wrapper);
-            scrollToBottom();
-        }
-
-        function scrollToBottom() {
-            chatContainer.scrollTo({
-                top: chatContainer.scrollHeight,
-                behavior: 'smooth'
-            });
-        }
-
-        function showHitlModal(message) {
-            hitlMessage.textContent = message;
-
-            // Hapus completely hidden tailwind class
-            hitlModal.classList.remove('hidden');
-
-            // Paksa styles agar Playwright visibility check lulus.
-            // Visibility hidden biasanya di inherit, kita butuh visible agar bisa di-klik Playwright.
-            hitlModal.setAttribute('style', 'display: flex !important; opacity: 1 !important; visibility: visible !important; pointer-events: auto !important;');
-            hitlModalContent.setAttribute('style', 'display: block !important; opacity: 1 !important; visibility: visible !important; transform: scale(1) !important; pointer-events: auto !important;');
-
-            void hitlModal.offsetWidth;
-            hitlModal.classList.replace('opacity-0', 'opacity-100');
-            hitlModalContent.classList.replace('scale-95', 'scale-100');
-        }
-
-        function hideHitlModal() {
-            hitlModal.classList.replace('opacity-100', 'opacity-0');
-            hitlModalContent.classList.replace('scale-100', 'scale-95');
-            setTimeout(() => {
-                hitlModal.style.display = 'none';
-            }, 300);
-        }
-
-        // Tangani form submit
-        chatForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const text = chatInput.value.trim();
-            if (!text || isAgentTyping || ws.readyState !== WebSocket.OPEN) return;
-
-            appendMessage(text, 'user');
-
-            // Kirim ke backend
-            ws.send(JSON.stringify({ type: 'user_prompt', message: text }));
-
-            chatInput.value = '';
-            isAgentTyping = true;
-        });
-
-        // Tangani tombol HitL
-        btnApprove.addEventListener('click', () => {
-            if (ws.readyState === WebSocket.OPEN) {
-                ws.send(JSON.stringify({ type: 'hitl_response', status: 'approved' }));
-                appendSystemMessage("Otorisasi: Disetujui");
-                hideHitlModal();
-            }
-        });
-
-        btnReject.addEventListener('click', () => {
-            if (ws.readyState === WebSocket.OPEN) {
-                ws.send(JSON.stringify({ type: 'hitl_response', status: 'rejected' }));
-                appendSystemMessage("Otorisasi: Ditolak");
-                hideHitlModal();
-            }
-        });
-
-        // Mulai koneksi WebSocket saat halaman dimuat
-        connectWebSocket();
-    </script>
+    <!-- JavaScript Logic -->
+    <script src="/static/main.js"></script>
 </body>
 </html>

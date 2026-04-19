@@ -7,56 +7,53 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="/static/style.css">
 </head>
-<body class="bg-gray-100 h-screen flex flex-col font-sans">
+<body class="bg-white h-screen flex flex-col font-sans text-gray-800">
 
     <!-- Navbar -->
-    <nav class="bg-indigo-600 text-white p-4 shadow-md flex justify-between items-center z-10">
-        <h1 class="text-xl font-bold flex items-center gap-2">
-            <span class="text-2xl">🧠</span> Poros One Dashboard
+    <nav class="bg-white p-4 border-b border-gray-200 flex justify-between items-center z-10 sticky top-0">
+        <h1 class="text-lg font-semibold flex items-center gap-2 text-gray-800">
+            <span class="text-xl">⚪</span> Poros One
         </h1>
-        <span id="connection-status" class="px-3 py-1 bg-red-500 rounded-full text-xs font-semibold uppercase tracking-wide">Disconnected</span>
+        <span id="connection-status" class="px-2 py-1 bg-gray-100 border border-gray-300 rounded text-[10px] font-medium uppercase tracking-wider text-gray-500">Offline</span>
     </nav>
 
     <!-- Main Chat Area -->
-    <main class="flex-1 overflow-y-auto p-4 md:p-8 space-y-4 no-scrollbar" id="chat-container">
+    <main class="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 no-scrollbar max-w-4xl mx-auto w-full" id="chat-container">
         <div class="flex justify-start">
-            <div class="bg-white text-gray-800 p-4 rounded-2xl rounded-tl-none shadow-sm max-w-2xl">
-                <p>Halo Mas Amir, saya Poros One. Sistem sudah online dan terkoneksi ke Local Dashboard. Apa yang bisa saya bantu hari ini?</p>
+            <div class="text-gray-700 bg-gray-50 px-5 py-4 rounded-2xl rounded-tl-none max-w-2xl text-sm leading-relaxed">
+                <p>Halo Mas Amir. Sistem online. Apa yang bisa saya bantu hari ini?</p>
             </div>
         </div>
     </main>
 
     <!-- Input Area -->
-    <footer class="bg-white p-4 shadow-[0_-2px_10px_rgba(0,0,0,0.05)] z-10">
-        <form id="chat-form" class="max-w-4xl mx-auto flex gap-2">
-            <input type="text" id="chat-input" class="flex-1 border border-gray-300 rounded-full px-6 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition" placeholder="Berikan instruksi ke Poros One..." autocomplete="off">
-            <button type="submit" class="bg-indigo-600 text-white px-8 py-3 rounded-full hover:bg-indigo-700 transition font-semibold shadow-md flex items-center gap-2" id="send-btn">
-                <span>Kirim</span>
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 1.414L10.586 9H7a1 1 0 100 2h3.586l-1.293 1.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414z" clip-rule="evenodd" />
+    <footer class="bg-white p-4 pb-6 z-10 w-full">
+        <form id="chat-form" class="max-w-4xl mx-auto flex gap-3 relative items-center border border-gray-300 rounded-xl px-4 py-2 bg-gray-50 focus-within:bg-white focus-within:border-gray-400 focus-within:shadow-sm transition-all duration-200">
+            <input type="text" id="chat-input" class="flex-1 bg-transparent focus:outline-none text-sm py-2" placeholder="Ketik perintah Anda..." autocomplete="off">
+            <button type="submit" class="text-gray-400 hover:text-black transition p-2" id="send-btn" title="Kirim">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                 </svg>
             </button>
         </form>
     </footer>
 
     <!-- HitL Approval Modal -->
-    <div id="hitl-modal" style="display: none;" class="fixed inset-0 bg-black/60 backdrop-blur-sm justify-center items-center z-50 opacity-0 transition-opacity duration-300">
-        <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full mx-4 overflow-hidden transform scale-95 transition-transform duration-300" id="hitl-modal-content">
-            <div class="bg-red-500 p-4 text-white flex items-center gap-3">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
-                <h2 class="text-xl font-bold">Otorisasi Kritis Diperlukan</h2>
-            </div>
-            <div class="p-6">
-                <p class="text-gray-600 mb-2 font-semibold">Agen meminta izin untuk melakukan tindakan Level 3:</p>
-                <div class="bg-gray-100 p-4 rounded-lg font-mono text-sm text-gray-800 break-words mb-6 border border-gray-200" id="hitl-message"></div>
-                <p class="text-sm text-gray-500 italic mb-6">Tindakan ini mungkin bersifat destruktif atau menghubungi layanan eksternal. Apakah Anda mengizinkan?</p>
-                <div class="flex gap-4">
-                    <button id="btn-reject" class="flex-1 bg-white border-2 border-red-500 text-red-500 hover:bg-red-50 font-bold py-3 px-4 rounded-xl transition">
+    <div id="hitl-modal" style="display: none;" class="fixed inset-0 bg-white/80 backdrop-blur-sm justify-center items-center z-50 opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-gray-100 max-w-md w-full mx-4 overflow-hidden transform scale-95 transition-transform duration-300" id="hitl-modal-content">
+            <div class="p-6 pb-4">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-2 h-2 rounded-full bg-red-500"></div>
+                    <h2 class="text-sm font-bold uppercase tracking-wider text-gray-800">Otorisasi Level 3</h2>
+                </div>
+                <p class="text-gray-600 text-sm mb-4 leading-relaxed">Sistem membutuhkan izin manual untuk melanjutkan tindakan ini:</p>
+                <div class="bg-gray-50 p-4 rounded text-xs font-mono text-gray-700 break-words mb-6 border border-gray-200 shadow-inner" id="hitl-message"></div>
+
+                <div class="flex gap-3">
+                    <button id="btn-reject" class="flex-1 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 text-sm font-medium py-2.5 px-4 rounded-lg transition">
                         Tolak (N)
                     </button>
-                    <button id="btn-approve" class="flex-1 bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition">
+                    <button id="btn-approve" class="flex-1 bg-black hover:bg-gray-800 text-white text-sm font-medium py-2.5 px-4 rounded-lg transition">
                         Izinkan (Y)
                     </button>
                 </div>

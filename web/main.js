@@ -19,8 +19,10 @@ function connectWebSocket() {
     ws = new WebSocket(wsUrl);
 
     ws.onopen = () => {
-        statusBadge.textContent = 'Connected';
-        statusBadge.classList.replace('bg-red-500', 'bg-green-500');
+        statusBadge.textContent = 'Online';
+        statusBadge.classList.replace('text-gray-500', 'text-green-600');
+        statusBadge.classList.replace('bg-gray-100', 'bg-green-50');
+        statusBadge.classList.replace('border-gray-300', 'border-green-200');
     };
 
     ws.onmessage = (event) => {
@@ -40,8 +42,10 @@ function connectWebSocket() {
     };
 
     ws.onclose = () => {
-        statusBadge.textContent = 'Disconnected';
-        statusBadge.classList.replace('bg-green-500', 'bg-red-500');
+        statusBadge.textContent = 'Offline';
+        statusBadge.classList.replace('text-green-600', 'text-gray-500');
+        statusBadge.classList.replace('bg-green-50', 'bg-gray-100');
+        statusBadge.classList.replace('border-green-200', 'border-gray-300');
         setTimeout(connectWebSocket, 3000);
     };
 
@@ -57,17 +61,17 @@ function appendMessage(text, sender, isLog = false) {
     const bubble = document.createElement('div');
 
     if (sender === 'user') {
-        bubble.className = 'bg-indigo-600 text-white p-4 rounded-2xl rounded-tr-none shadow-md max-w-2xl';
+        bubble.className = 'bg-gray-100 text-gray-800 px-5 py-3 rounded-2xl rounded-tr-none max-w-2xl text-sm leading-relaxed';
         bubble.textContent = text;
     } else {
         // Implementasi textContent yang lebih aman untuk mencegah manipulasi HTML dari LLM
         const safeText = document.createTextNode(text);
 
         if (isLog) {
-            bubble.className = 'bg-gray-800 text-green-400 p-3 rounded-lg font-mono text-sm shadow-sm max-w-3xl border border-gray-700 overflow-x-auto whitespace-pre-wrap';
+            bubble.className = 'bg-transparent text-gray-400 p-2 rounded text-xs font-mono max-w-3xl overflow-x-auto whitespace-pre-wrap';
             bubble.appendChild(safeText);
         } else {
-            bubble.className = 'bg-white text-gray-800 p-4 rounded-2xl rounded-tl-none shadow-sm max-w-2xl border border-gray-100 whitespace-pre-wrap';
+            bubble.className = 'bg-gray-50 text-gray-700 px-5 py-4 rounded-2xl rounded-tl-none max-w-2xl text-sm leading-relaxed border border-gray-100';
             bubble.appendChild(safeText);
         }
     }
@@ -79,9 +83,9 @@ function appendMessage(text, sender, isLog = false) {
 
 function appendSystemMessage(text) {
     const wrapper = document.createElement('div');
-    wrapper.className = 'flex justify-center my-4';
+    wrapper.className = 'flex justify-center my-6';
     const badge = document.createElement('div');
-    badge.className = 'bg-gray-200 text-gray-600 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider';
+    badge.className = 'text-gray-400 text-[10px] font-medium uppercase tracking-[0.2em]';
     badge.textContent = text;
     wrapper.appendChild(badge);
     chatContainer.appendChild(wrapper);
